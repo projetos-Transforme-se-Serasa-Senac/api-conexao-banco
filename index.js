@@ -20,24 +20,75 @@ var connection = mysql.createConnection({
   port: 3306
 });
 
-// Buscando todos os livros 
-app.get('/match', (req, res) => {
 
- 
-    connection.query('SELECT * FROM livro;', function (error, results, fields) {
-      if (error) throw error;
-      res.send(results);
+// #######################################################################
+
+// AUTENTICACAO
+
+
+app.post('/autentica', (req, res) => {
+  
+  const usuario = req.body.usuario
+  const senha = req.body.senha
+  
+  connection.query(`SELECT id_usuario, user_name FROM usuario WHERE user_name = '${usuario}' AND senha = '${senha}';`, function (error, results, fields) {
+    if (error) throw error;
+    res.send(results);
+  });
+  
+})
+
+// ##########################################################################
+
+
+// CADASTRAR USUARIO
+
+app.post('/usuarios', (req, res) => {
+  
+  const nome = req.body.nome;
+  const user_name = req.body.user_name;
+  const email = req.body.email;
+  const dt_nascimento = req.body.dt_nascimento;
+  const senha = req.body.senha;
+  
+  const query = `
+  INSERT INTO usuario (nome, user_name, email, dt_nascimento, senha) 
+  VALUES ("${nome}", "${user_name}", "${email}", "${dt_nascimento}", "${senha}"); `
+  
+  
+  
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    res.send(results);
     });
-     
+    
 
+  })
+
+  
+// ##########################################################################################
+
+
+// BUSCAR TODOS OS LIVROS
+app.get('/livros', (req, res) => {
+  
+  
+  connection.query('SELECT * FROM livro;', function (error, results, fields) {
+    if (error) throw error;
+    res.send(results);
+  });
+  
+  
 })
 
 // ############################################
 
 
+// CADASTRAR LIVROS
+
 app.post('/livros', (req, res) => {
-
-
+  
+  const id_usuario =  req.body.id_usuario
   const titulo = req.body.titulo
   const autor = req.body.autor
   const genero = req.body.genero
@@ -45,61 +96,67 @@ app.post('/livros', (req, res) => {
   const tags = req.body.tags
   const aluguel = req.body.aluguel
   const sinopse = req.body.sinopse
- 
-  const query = `
-
-  INSERT INTO livro 
-  (titulo, autor, genero, classificacao_etaria, tags, aluguel, sinopse)
-  VALUES 
-  ('${titulo}', '${autor}', '${genero}', '${classificacao_etaria}', '${tags}', ${aluguel}, '${sinopse}');
   
-  `
- 
-  connection.query(query, function (error, results, fields) {
+  
+  const query = `
+  
+  
+  INSERT INTO livro
+    (titulo, autor, genero, classificacao_etaria, tags, aluguel, sinopse)
+    VALUES 
+    ('${titulo}', '${autor}', '${genero}', '${classificacao_etaria}', '${tags}', ${aluguel}, '${sinopse}');
+    `
+    
+    connection.query(query, function (error, results, fields) {
     if (error) throw error;
 
-    // connection.query("INSERT INTO usuario_livro ()")
-    res.send(results);
+    insereUsuarioLivro(results, id_usuario, res)
   });
-   
-
+  
+  
 }) 
 
-app.post('/', (req, res) => {
+const insereUsuarioLivro = (results, id_usuario, res) => {
   
-    connection.query('INSERT INTO usuario (nome, user_name, email, dt_nascimento, senha) VALUES ("Alice da Silva Costa", "aliceSCosta", "alicealmeyda72@gmail.com", "2001-10-23", "123456");', function (error, results, fields) {
-      if (error) throw error;
-      res.send(results);
-    });
+  
+  // console.log(results)
+  // console.log(results[0])
+  // console.log(results.insertId)
+  const id_livro = results.insertId
+  const query = `INSERT INTO usuario_livro (id_usuario, id_livro) VALUES (${id_usuario}, ${id_livro});`
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    res.send(results);
+    
+  });
+  
+}
+
+//##############################################################################
+
+
+// MATCH LIVRO
+
+app.post('/match', (req, res) => {
+
+  const id_livro = req.body.id_livro
+  const id_usuario = req.body.id_usuario
+  
+  const query = `  
+  INSERT INTO matches (id_usuario_dono, id_usuario_pedinte)
+  VALUES ( (SELECT id_usuario FROM usuario_livro WHERE id_livro = ${id_livro}), ${id_usuario} )
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
      
 })
 
-app.get('/usuarios', (req, res) => {
-    res.send('<h1>Listando usuarios</h1>')
-})
 
-
-app.post('/usuarios', (req, res) => {
-
-  const nome = req.body.nome;
-  const user_name = req.body.user_name;
-  const email = req.body.email;
-  const dt_nascimento = req.body.dt_nascimento;
-  const senha = req.body.senha;
-
-  const query = `
-    INSERT INTO usuario (nome, user_name, email, dt_nascimento, senha) 
-    VALUES ("${nome}", "${user_name}", "${email}", "${dt_nascimento}", "${senha}"); `
-
-
- 
-    connection.query(query, function (error, results, fields) {
-      if (error) throw error;
-      res.send(results);
-    });
-     
-
-})
+// #################################################################
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
