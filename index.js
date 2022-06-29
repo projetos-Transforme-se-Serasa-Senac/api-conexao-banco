@@ -71,9 +71,16 @@ app.post('/usuarios', (req, res) => {
 
 // BUSCAR TODOS OS LIVROS
 app.get('/livros', (req, res) => {
+
+  const query = 
+  `
+    SELECT usuario_livro.id_usuario_livro, usuario.id_usuario, livro.*, usuario.user_name FROM usuario_livro
+      JOIN livro ON usuario_livro.id_livro = livro.id_livro
+      JOIN usuario ON usuario_livro.id_usuario = usuario.id_usuario;
+  `
   
   
-  connection.query('SELECT * FROM livro;', function (error, results, fields) {
+  connection.query(query, function (error, results, fields) {
     if (error) throw error;
     res.send(results);
   });
@@ -157,6 +164,51 @@ app.post('/match', (req, res) => {
 
 
 // #################################################################
+
+// SEGUIR USUARIO
+
+app.post('/seguir', (req, res) => {
+
+  const id_seguidor = req.body.id_seguidor
+  const id_seguindo = req.body.id_seguindo
+  
+  const query = `  
+  INSERT INTO seguidores (id_seguidor, id_seguindo)
+  VALUES ( ${id_seguidor}, ${id_seguindo} )
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
+     
+})
+
+
+// ###################################################################
+
+// FEED
+
+app.get('/feed/:id_seguidor', (req, res) => {
+
+  const id_seguidor = req.params.id_seguidor
+  
+  const query = `  
+  SELECT livro.sinopse, usuario.user_name, livro.imagem FROM seguidores
+  JOIN usuario_livro ON seguidores.id_seguindo = usuario_livro.id_usuario
+  JOIN livro ON usuario_livro.id_livro = livro.id_livro
+  JOIN usuario ON usuario_livro.id_usuario = usuario.id_usuario
+  WHERE id_seguidor = ${id_seguidor}
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
+     
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
