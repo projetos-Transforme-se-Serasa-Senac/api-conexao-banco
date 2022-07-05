@@ -50,10 +50,12 @@ app.post('/usuarios', (req, res) => {
   const email = req.body.email;
   const dt_nascimento = req.body.dt_nascimento;
   const senha = req.body.senha;
+  const img_perfil = req.body.img_perfil;
+  const img_capa = req.body.img_capa;
   
   const query = `
-  INSERT INTO usuario (nome, user_name, email, dt_nascimento, senha) 
-  VALUES ("${nome}", "${user_name}", "${email}", "${dt_nascimento}", "${senha}"); `
+  INSERT INTO usuario (nome, user_name, email, dt_nascimento, senha, img_perfil, img_capa) 
+  VALUES ("${nome}", "${user_name}", "${email}", "${dt_nascimento}", "${senha}", "${img_perfil}", "${img_capa}"); `
   
   
   
@@ -100,18 +102,18 @@ app.post('/livros', (req, res) => {
   const autor = req.body.autor
   const genero = req.body.genero
   const classificacao_etaria = req.body.classificacao_etaria
-  const tags = req.body.tags
   const aluguel = req.body.aluguel
   const sinopse = req.body.sinopse
+  const img_livro = req.body.img_livro
   
   
   const query = `
   
   
   INSERT INTO livro
-    (titulo, autor, genero, classificacao_etaria, tags, aluguel, sinopse)
+    (titulo, autor, genero, classificacao_etaria, aluguel, sinopse, imagem, fl_status)
     VALUES 
-    ('${titulo}', '${autor}', '${genero}', '${classificacao_etaria}', '${tags}', ${aluguel}, '${sinopse}');
+    ('${titulo}', '${autor}', '${genero}', '${classificacao_etaria}', ${aluguel}, '${sinopse}', '${img_livro}', 0);
     `
     
     connection.query(query, function (error, results, fields) {
@@ -150,8 +152,8 @@ app.post('/match', (req, res) => {
   const id_usuario = req.body.id_usuario
   
   const query = `  
-  INSERT INTO matches (id_usuario_dono, id_usuario_pedinte)
-  VALUES ( (SELECT id_usuario FROM usuario_livro WHERE id_livro = ${id_livro}), ${id_usuario} )
+  INSERT INTO matches (id_usuario_dono, id_usuario_pedinte, id_livro)
+  VALUES ( (SELECT id_usuario FROM usuario_livro WHERE id_livro = ${id_livro}), ${id_usuario}, ${id_livro} )
   `
 
   connection.query(query, function (error, results, fields) {
@@ -195,7 +197,7 @@ app.get('/feed/:id_seguidor', (req, res) => {
   const id_seguidor = req.params.id_seguidor
   
   const query = `  
-  SELECT livro.sinopse, usuario.user_name, livro.imagem FROM seguidores
+  SELECT livro.sinopse, usuario.user_name, livro.imagem, livro.titulo FROM seguidores
   JOIN usuario_livro ON seguidores.id_seguindo = usuario_livro.id_usuario
   JOIN livro ON usuario_livro.id_livro = livro.id_livro
   JOIN usuario ON usuario_livro.id_usuario = usuario.id_usuario
@@ -209,6 +211,122 @@ app.get('/feed/:id_seguidor', (req, res) => {
   });
      
 })
+
+
+//######################################################################
+
+//BUSCAR PUBLICACOES
+
+app.get('/publicacoes/:id_usuario', (req, res) => {
+
+  const id_usuario = req.params.id_usuario
+  
+  const query = `  
+  SELECT livro.* FROM usuario_livro
+    JOIN livro ON usuario_livro.id_livro = livro.id_livro
+  WHERE id_usuario = ${id_usuario}
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
+     
+})
+
+
+//######################################################################
+
+//BUSCAR EMPRESTADOS
+
+app.get('/emprestados/:id_usuario', (req, res) => {
+
+  const id_usuario = req.params.id_usuario
+  
+  const query = `  
+  SELECT livro.* FROM usuario_livro
+    JOIN livro ON usuario_livro.id_livro = livro.id_livro
+  WHERE id_usuario = ${id_usuario}
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
+     
+})
+
+
+//######################################################################
+
+//BUSCAR MEUS PEDIDOS
+
+app.get('/pedidos/:id_usuario', (req, res) => {
+
+  const id_usuario = req.params.id_usuario
+  
+  const query = `  
+  SELECT livro.* FROM usuario_livro
+    JOIN livro ON usuario_livro.id_livro = livro.id_livro
+  WHERE id_usuario = ${id_usuario}
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
+     
+})
+
+
+//######################################################################
+
+//BUSCAR SOLICITACOES
+
+app.get('/solicitacoes/:id_usuario', (req, res) => {
+
+  const id_usuario = req.params.id_usuario
+  
+  const query = `  
+  SELECT matches.*, usuario.user_name AS usuario_pedinte, livro.* FROM matches 
+  JOIN usuario ON matches.id_usuario_pedinte = usuario.id_usuario
+  JOIN livro ON matches.id_livro = livro.id_livro 
+  WHERE id_usuario_dono = ${id_usuario}
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
+     
+})
+
+
+//########################################################################
+
+// BUSCAR PERFIL
+
+app.get('/perfil/:id_usuario', (req, res) => {
+
+  const id_usuario = req.params.id_usuario
+  
+  
+  const query = `  
+  SELECT * FROM usuario WHERE id_usuario = ${id_usuario}
+  `
+
+  connection.query(query, function (error, results, fields) {
+    if (error) throw error;
+    console.log(results)
+    res.send(results); 
+  });
+     
+})
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
