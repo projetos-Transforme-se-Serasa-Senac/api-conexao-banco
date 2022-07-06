@@ -72,13 +72,17 @@ app.post('/usuarios', (req, res) => {
 
 
 // BUSCAR TODOS OS LIVROS
-app.get('/livros', (req, res) => {
+app.get('/livros:id_usuario', (req, res) => {
+
+  const id_usuario = req.params.id_usuario
 
   const query = 
   `
-    SELECT usuario_livro.id_usuario_livro, usuario.id_usuario, livro.*, usuario.user_name FROM usuario_livro
-      JOIN livro ON usuario_livro.id_livro = livro.id_livro
-      JOIN usuario ON usuario_livro.id_usuario = usuario.id_usuario;
+  SELECT usuario_livro.id_usuario_livro, usuario.id_usuario, livro.*, usuario.user_name FROM usuario_livro
+  JOIN livro ON usuario_livro.id_livro = livro.id_livro
+  JOIN usuario ON usuario_livro.id_usuario = usuario.id_usuario
+  WHERE usuario.id_usuario NOT IN (${id_usuario});
+
   `
   
   
@@ -197,7 +201,7 @@ app.get('/feed/:id_seguidor', (req, res) => {
   const id_seguidor = req.params.id_seguidor
   
   const query = `  
-  SELECT livro.sinopse, usuario.user_name, livro.imagem, livro.titulo FROM seguidores
+  SELECT livro.sinopse, usuario.user_name, usuario.img_perfil, livro.imagem, livro.titulo FROM seguidores
   JOIN usuario_livro ON seguidores.id_seguindo = usuario_livro.id_usuario
   JOIN livro ON usuario_livro.id_livro = livro.id_livro
   JOIN usuario ON usuario_livro.id_usuario = usuario.id_usuario
